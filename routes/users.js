@@ -2,142 +2,60 @@
 const express = require('express')
 const app = express.Router()
 const Usuario = require('../models/Usuario') // NUESTRO MODELO PARA PERMITIR GENERAR O MODIFICAR USUARIOS CON LA BASE DE DATOS
-
-/**
- * @swagger
- * components:
- *  schemas:
- *      User:
- *          type: object
- *          properties:
- *              id:
- *                  type: integer
- *              nombre:
- *                  type: string
- *                  description: Nombre de la persona
- *              pais:
- *                  type: string
- *                  description: País de la persona
- *          required:
- *              - id
- *              - nombre
- *              - pais
- *          example:
- *              id: 0
- *              nombre: Mike
- *              pais: Argentina
- */
-
-//GET
-/**
- * @swagger
- * /api/obtener-usuarios:
- *  get:
- *      summary: Trae todos los usuarios
- *      tags: [User]
- *      responses:
- *          200:
- *              description: Todos los usuarios
- */
+const bcryptjs = require('bcryptjs')
+const jwt = require('jsonwebtoken')
 
 app.get('/obtener-usuarios', async (req, res) => {
-	const { pais, nombre } = req.query
 	try {
-		const usuarios = pais ? await Usuario.find({ pais: pais }) : await Usuario.find({})
-		console.log('usuarios :', usuarios)
+		const usuarios = await Usuario.find({})
 		res.json({ usuarios })
 	} catch (error) {
 		res.status(500).json({ msg: 'Hubo un error obteniendo los datos' })
 	}
 })
 
-//POST
-/**
- * @swagger
- * /api/crear-usuario:
- *  post:
- *      summary: Crea un usuario
- *      tags: [User]
- *      requestBody:
- *          required: true
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      $ref: '#/components/schemas/User'
- *      responses:
- *          200:
- *              description: Nuevo usuario creado
- */
-
-app.post('/crear-usuario', async (req, res) => {
-	const { nombre, pais } = req.body
-	const nuevaUsuario = await Usuario.create({ nombre, pais })
-	res.json(nuevaUsuario)
-})
-
-//PUT
-/**
- * @swagger
- * /api/actualizar-usuario:
- *  put:
- *      summary: Edita un usuario
- *      tags: [User]
- *      requestBody:
- *          required: true
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      $ref: '#/components/schemas/User'
- *      responses:
- *          200:
- *              description: Usuario editado
- */
-
-app.put('/actualizar-usuario', async (req, res) => {
-	const { id, nombre, pais } = req.body
+// CREAR UN USUARIO JWT
+app.post('/crear', async (req, res) => {
+	const { nombre, email, password } = req.body // OBTENER USUARIO, EMAIL Y PASSWORD DE LA PETICIÓN
 
 	try {
-		const actualizacionUsuario = await Usuario.findByIdAndUpdate(id, { nombre, pais }, { new: true })
+		// GENERAMOS STRING ALEATORIO PARA USARSE CON EL PASSWORD
+		const salt = await bcryptjs.genSalt(10)
+		const hashedPassword = await bcryptjs.hash(password, salt)
 
-		res.json(actualizacionUsuario)
-	} catch (error) {
-		res.status(500).json({
-			msg: 'Hubo un error actualizando la Usuario',
+		// CREAMOS UN USUARIO CON SU PASSWORD ENCRIPTADO
+		const respuestaDB = await Usuario.create({
+			nombre,
+			email,
+			password: hashedPassword,
 		})
-	}
-})
+		// USUARIO CREADO. VAMOS A CREAR EL JSON WEB TOKEN
 
-//delete
-/**
- * @swagger
- * /api/borrar-usuario:
- *  delete:
- *      summary: Elimina un usuario
- *      tags: [User]
- *      requestBody:
- *          required: true
- *          content:
- *              application/json:
- *                  schema:
- *                      type: object
- *                      $ref: '#/components/schemas/User'
- *      responses:
- *          200:
- *              description: Usuario Eliminado
- */
+		// 1. EL "PAYLOAD" SERÁ UN OBJETO QUE CONTENDRÁ EL ID DEL USUARIO ENCONTRADO EN BASE DE DATOS.
+		// POR NINGÚN MOTIVO AGREGUES INFORMACIÓN CONFIDENCIAL DEL USUARIO (SU PASSWORD) EN EL PAYLOAD.
 
-app.delete('/borrar-usuario', async (req, res) => {
-	const { id } = req.body
+		const payload = {
+			user: {
+				id: respuestaDB._id,
+			},
+		}
 
-	try {
-		const UsuarioBorrada = await Usuario.findByIdAndRemove({ _id: id })
-
-		res.json(UsuarioBorrada)
+		// 2. FIRMAR EL JWT
+		jwt.sign(
+			payload, // DATOS QUE SE ACOMPAÑARÁN EN EL TOKEN
+			process.env.SECRET, // LLAVE PARA DESCIFRAR LA FIRMA ELECTRÓNICA DEL TOKEN,
+			{
+				expiresIn: 360000, // EXPIRACIÓN DEL TOKEN
+			},
+			(error, token) => {
+				// CALLBACK QUE, EN CASO DE QUE EXISTA UN ERROR, DEVUELVA EL TOKEN
+				if (error) throw error
+				res.json({ token })
+			}
+		)
 	} catch (error) {
-		res.status(500).json({
-			msg: 'Hubo un error borrando el Usuario especificado',
+		return res.status(400).json({
+			msg: error,
 		})
 	}
 })

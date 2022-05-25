@@ -3,12 +3,12 @@ const express = require('express')
 const app = express()
 const bodyParser = require('body-parser')
 const userRoutes = require('./routes/users')
+const guitarRoutes = require('./routes/guitarras')
 const swaggerUI = require('swagger-ui-express')
 const swaggerJsDoc = require('swagger-jsdoc')
 const path = require('path')
-
 const cors = require('cors') // IMPORTAMOS CORS
-const Usuario = require('./models/Usuario') // NUESTRO MODELO PARA PERMITIR GENERAR O MODIFICAR USUARIOS CON LA BASE DE DATOS
+
 const connectDB = require('./config/db') // IMPORTAMOS UNA CARPETA PARA NUESTRA BASE DE DATOS, AÚN NO LA CREAMOS
 
 const swaggerSpec = {
@@ -44,7 +44,8 @@ app.use(bodyParser.json())
 
 //3. Rutas
 app.use('/api-doc', swaggerUI.serve, swaggerUI.setup(swaggerJsDoc(swaggerSpec)))
-app.use('/api', userRoutes)
+app.use('/api', guitarRoutes)
+app.use('/usuario', userRoutes)
 app.get('/', (req, res) => res.send('UCAMP API'))
 
 // 4. SERVIDOR
