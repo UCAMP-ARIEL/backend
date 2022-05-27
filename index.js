@@ -8,7 +8,6 @@ const swaggerUI = require('swagger-ui-express')
 const swaggerJsDoc = require('swagger-jsdoc')
 const path = require('path')
 const cors = require('cors') // IMPORTAMOS CORS
-
 const connectDB = require('./config/db') // IMPORTAMOS UNA CARPETA PARA NUESTRA BASE DE DATOS, AÚN NO LA CREAMOS
 
 const swaggerSpec = {
