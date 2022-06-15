@@ -43,11 +43,11 @@ app.use(bodyParser.json())
 
 //3. Rutas
 app.use('/api-doc', swaggerUI.serve, swaggerUI.setup(swaggerJsDoc(swaggerSpec)))
-app.use('/api', guitarRoutes)
+app.use('/', guitarRoutes)
 app.use('/usuario', userRoutes)
 app.get('/', (req, res) => res.send('UCAMP API'))
 
 // 4. SERVIDOR
 app.listen(process.env.PORT, () => {
-	console.log('El servidor está corriendo en 3000')
+	console.log('El servidor está corriendo en 3005')
 })

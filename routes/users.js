@@ -17,7 +17,7 @@ app.get('/obtener-usuarios', async (req, res) => {
 
 // CREAR UN USUARIO JWT
 app.post('/crear', async (req, res) => {
-	const { nombre, email, password } = req.body // OBTENER USUARIO, EMAIL Y PASSWORD DE LA PETICIÓN
+	const { username, email, password } = req.body // OBTENER USUARIO, EMAIL Y PASSWORD DE LA PETICIÓN
 
 	try {
 		// GENERAMOS STRING ALEATORIO PARA USARSE CON EL PASSWORD
@@ -26,7 +26,7 @@ app.post('/crear', async (req, res) => {
 
 		// CREAMOS UN USUARIO CON SU PASSWORD ENCRIPTADO
 		const respuestaDB = await Usuario.create({
-			nombre,
+			username,
 			email,
 			password: hashedPassword,
 		})
